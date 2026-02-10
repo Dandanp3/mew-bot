@@ -1,0 +1,31 @@
+{
+  "generations": [
+    {
+      "region": "Kanto",
+      "gen_roman": "I",
+      "pokemon": [
+        { "name": "Bulbasaur", "id": 1, "icon": "<:bulbasaur:ID_DO_EMOJI>" },
+        { "name": "Charmander", "id": 4, "icon": "<:charmander:ID_DO_EMOJI>" },
+        { "name": "Squirtle", "id": 7, "icon": "<:squirtle:ID_DO_EMOJI>" }
+      ]
+    },
+    {
+      "region": "Johto",
+      "gen_roman": "II",
+      "pokemon": [
+        { "name": "Chikorita", "id": 152, "icon": "<:chikorita:ID_DO_EMOJI>" },
+        { "name": "Cyndaquil", "id": 155, "icon": "<:cyndaquil:ID_DO_EMOJI>" },
+        { "name": "Totodile", "id": 158, "icon": "<:totodile:ID_DO_EMOJI>" }
+      ]
+    },
+    {
+      "region": "Hoenn",
+      "gen_roman": "III",
+      "pokemon": [
+        { "name": "Treecko", "id": 252, "icon": "<:treecko:ID_DO_EMOJI>" },
+        { "name": "Torchic", "id": 255, "icon": "<:torchic:ID_DO_EMOJI>" },
+        { "name": "Mudkip", "id": 258, "icon": "<:mudkip:ID_DO_EMOJI>" }
+      ]
+    }
+  ]
+}
