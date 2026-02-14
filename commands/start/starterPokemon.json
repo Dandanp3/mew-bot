@@ -1,12 +1,12 @@
 {
-  "generations": [
+  "starters": [
     {
+      "gen": "I",
       "region": "Kanto",
-      "gen_roman": "I",
-      "pokemon": [
-        { "name": "Bulbasaur", "id": 1, "icon": "<:bulbasaur1:id>" },
-        { "name": "Charmander", "id": 4, "icon": "<:charmander4:id>" },
-        { "name": "Squirtle", "id": 7, "icon": "<:squirtle7:id>" }
+      "pokes": [
+        { "name": "Bulbasaur", "api_id": 1, "emoji": "<:bulbasaur1:1472271345135128607>" },
+        { "name": "Charmander", "api_id": 4, "emoji": "<:charmander4:1472271358703435899>" },
+        { "name": "Squirtle", "api_id": 7, "emoji": "<:squirtle7:1472271332732440730>" }
       ]
     }
   ]
