@@ -8,6 +8,24 @@
         { "name": "Charmander", "api_id": 4, "emoji": "<:charmander4:1472271358703435899>" },
         { "name": "Squirtle", "api_id": 7, "emoji": "<:squirtle7:1472271332732440730>" }
       ]
+    },
+    {
+      "gen": "II",
+      "region": "Johto",
+      "pokes": [
+        { "name": "Chikorita", "api_id": 152, "emoji": "<:Chikorita152:1472639893871001826>" },
+        { "name": "Cyndaquil", "api_id": 155, "emoji": "<:Cyndaquil155:1472640132355063953>" },
+        { "name": "Totodile", "api_id": 158, "emoji": "<:totodile158:1472640178542608528>" }
+      ]
+    },
+    {
+      "gen": "III",
+      "region": "Hoenn",
+      "pokes": [
+        { "name": "Treecko", "api_id": 252, "emoji": "<:252:1472641375571939419>" },
+        { "name": "Torchic", "api_id": 255, "emoji": "<:255:1472641802279321773>" },
+        { "name": "Mudkip", "api_id": 258, "emoji": "<:258:1472642179481468969>" }
+      ]
     }
   ]
 }

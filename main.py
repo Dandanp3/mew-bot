@@ -11,7 +11,7 @@ intents.message_content = True
 
 class Mew(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="p!", intents=intents)
     
     async def setup_hook(self):
         # O caminho é: pasta.nome_do_arquivo (sem o .py)
