@@ -26,6 +26,24 @@
         { "name": "Torchic", "api_id": 255, "emoji": "<:255:1472641802279321773>" },
         { "name": "Mudkip", "api_id": 258, "emoji": "<:258:1472642179481468969>" }
       ]
+    },
+    {
+      "gen": "IIIV",
+      "region": "Sinnoh",
+      "pokes": [
+        { "name": "Turtwig", "api_id": 387, "emoji": "<:387:1472715668460666993>" },
+        { "name": "Chimchar", "api_id": 390, "emoji": "<:390:1472715839894454382>" },
+        { "name": "Piplup", "api_id": 393, "emoji": "<:393:1472716076226838740>" }
+      ]
+    },
+    {
+      "gen": "V",
+      "region": "Unova",
+      "pokes": [
+        { "name": "Snivy", "api_id": 495, "emoji": "<:495:1472718048497631313>" },
+        { "name": "Tepig", "api_id": 498, "emoji": "<:498:1472718065853661266>" },
+        { "name": "Oshawott", "api_id": 501, "emoji": "<:501:1472718082136084480>" }
+      ]
     }
   ]
 }
