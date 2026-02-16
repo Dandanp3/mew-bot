@@ -14,7 +14,6 @@ class Mew(commands.Bot):
         super().__init__(command_prefix="p!", intents=intents)
     
     async def setup_hook(self):
-        # O caminho é: pasta.nome_do_arquivo (sem o .py)
         extensions = ['commands.start.starter',
                       'commands.general.dex'] 
         

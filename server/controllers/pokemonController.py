@@ -25,7 +25,6 @@ class PokemonController:
             
             def parse_chain(node):
                 if not node: return
-                # Verifica se o pokemon atual na árvore é o que estamos processando
                 if node.get('species', {}).get('name') == species_res.get('name'):
                     for evo in node.get('evolves_to', []):
                         details = evo.get('evolution_details', [{}])[0]
@@ -45,7 +44,7 @@ class PokemonController:
             return []
 
     async def seed_kanto(self):
-        print("🚀 Iniciando importação de Kanto (151 Pokémons)...")
+        print("🚀 Iniciando importação de Kanto com Sprites Completos (151 Pokémons)...")
         
         for i in range(1, 152):
             try:
@@ -55,18 +54,17 @@ class PokemonController:
 
                 res = requests.get(f"https://pokeapi.co/api/v2/pokemon/{i}").json()
                 
-                # Stats com nomes limpos
+                # Stats
                 stats = {s['stat']['name'].replace('-', '_'): s['base_stat'] for s in res['stats']}
                 
                 # Tipos e Habilidades
                 types = [t['type']['name'].capitalize() for t in res['types']]
                 abilities = [a['ability']['name'].capitalize() for a in res['abilities']]
                 
-                # MOVES - Filtro corrigido
+                # Moves (Level-up na Gen 5)
                 level_up_moves = []
                 for m in res.get('moves', []):
                     for detail in m.get('version_group_details', []):
-                        # Filtramos pela geração 5 (Black/White) e método level-up
                         if detail['version_group']['name'] == 'black-white' and \
                            detail['move_learn_method']['name'] == 'level-up':
                             level_up_moves.append({
@@ -79,25 +77,31 @@ class PokemonController:
                 # Evoluções
                 evolutions = self.get_evolution_data(i)
 
-                # Criando o objeto
+                gen5_path = res['sprites']['versions']['generation-v']['black-white']['animated']
+                
+                sprites_map = {
+                    "front": gen5_path['front_default'],
+                    "back": gen5_path['back_default'],
+                    "front_shiny": gen5_path['front_shiny'],
+                    "back_shiny": gen5_path['back_shiny']
+                }
+
+                # Criando o objeto com o novo Model
                 pokemon = PokemonBaseModel(
                     id=i,
                     name=res['name'].capitalize(),
                     types=types,
                     stats=stats,
-                    abilities=abilities,
                     moves={"level_up": level_up_moves},
+                    abilities=abilities,
                     evolutions=evolutions,
-                    sprites={
-                        "animated": res['sprites']['versions']['generation-v']['black-white']['animated']['front_default'],
-                        "static": res['sprites']['versions']['generation-v']['black-white']['front_default']
-                    }
+                    sprites=sprites_map
                 )
 
                 self.collection.insert_one(pokemon.to_dict())
-                print(f"{pokemon.name} (# {i}) importado!")
+                print(f"✅ {pokemon.name} (# {i}) importado com sucesso!")
 
             except Exception as e:
                 print(f"❌ Erro ao importar ID {i}: {e}")
 
-        print("✨ Importação finalizada!")
+        print("✨ Database atualizada com novos sprites!")

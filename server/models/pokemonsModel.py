@@ -9,26 +9,19 @@ class PokemonBaseModel:
                  moves: Dict[str, List[Dict[str, Union[str, int]]]], 
                  abilities: List[str],
                  evolutions: List[Dict] = [],
-                 sprites: Dict[str, str] = {}
+                 sprites: Dict[str, str] = {} 
                  ):
         
         self._id = id  
         self.name = name
-        
         self.types = types
-        
         self.stats = stats
-        
         self.abilities = abilities
-
         self.moves = moves
         self.evolutions = evolutions
-
-        # URLs das imagens para não depender da API toda hora
         self.sprites = sprites
 
     def to_dict(self):
-        # Converte a classe para formato dic
         return {
             "_id": self._id,
             "name": self.name,
