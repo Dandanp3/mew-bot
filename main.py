@@ -15,7 +15,8 @@ class Mew(commands.Bot):
     
     async def setup_hook(self):
         # O caminho é: pasta.nome_do_arquivo (sem o .py)
-        extensions = ['commands.start.starter'] 
+        extensions = ['commands.start.starter',
+                      'commands.general.dex'] 
         
         for ext in extensions:
             try:
