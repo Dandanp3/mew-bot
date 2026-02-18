@@ -21,8 +21,12 @@ class CaughtPokemonModel:
         
         # Lvl aleatorio de 1-40
         self.level = level if level is not None else random.randint(1, 40)
-        # Xp total acumulado
-        #self.total_xp = self._calculate_xp_for_level(self.level)
+        self.total_xp = self._calculate_xp_for_level(self.level)
+        
+        # Logica shiny (0.2%)
+        # Original 1024 - 0.097%
+        # Se cair 1, o pokemon é shiny
+        self.is_shiny = random.randint(1, 500) == 1
         
         # Sorteando nature e IVS
         self.nature = random.choice(list(NATURES_DATA.keys()))
@@ -35,7 +39,7 @@ class CaughtPokemonModel:
         self.caught_at = datetime.utcnow
     
     def _calculate_xp_for_level(self, level: int) -> int:
-        # Fórmuma n^3
+        # Fórmula n^3
         return int(level ** 3)
     
     def calculate_current_stats(self, base_stats: Dict[str, int]) -> Dict[str, int]:
@@ -47,6 +51,31 @@ class CaughtPokemonModel:
             iv = self.ivs.get(stat, 0)
             ev = self.evs.get(stat, 0)
             
-        if stat == "hp":
-            value = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + self.level + 10
-            final_stats[stat] = value
+            if stat == "hp":
+                value = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + self.level + 10
+                final_stats[stat] = value
+            else:
+                modifier = 1.0
+                if nature_mod["buff"] == stat: modifier = 1.1
+                if nature_mod["debuff"] == stat: modifier = 0.9
+                
+                core_calc = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + 5
+                final_stats[stat] = math.floor(core_calc * modifier)      
+        return final_stats     
+
+    def to_dict(self):
+        return {
+            "owner_id": self.owner_id,
+            "species_id": self.species_id,
+            "name": self.name,
+            "nickname": self.nickname,
+            "catch_order": self.catch_order,
+            "level": self.level,
+            "is_shiny": self.is_shiny,
+            "total_xp": self.total_xp,
+            "nature":self.nature,
+            "ivs": self.ivs,
+            "iv_percentage": self.iv_percentage,
+            "evs": self.evs,
+            "caught_at": self.caught_at
+        }
