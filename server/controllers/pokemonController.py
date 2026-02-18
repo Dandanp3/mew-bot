@@ -44,7 +44,7 @@ class PokemonController:
             return []
 
     async def seed_kanto(self):
-        print("🚀 Iniciando importação de Kanto com Sprites Completos (151 Pokémons)...")
+        print("🚀 Iniciando importação de Kanto com Sprites e Moves (151 Pokémons)...")
         
         for i in range(1, 152):
             try:
@@ -61,7 +61,7 @@ class PokemonController:
                 types = [t['type']['name'].capitalize() for t in res['types']]
                 abilities = [a['ability']['name'].capitalize() for a in res['abilities']]
                 
-                # Moves (Level-up na Gen 5)
+                # Moves 
                 level_up_moves = []
                 for m in res.get('moves', []):
                     for detail in m.get('version_group_details', []):
@@ -77,16 +77,21 @@ class PokemonController:
                 # Evoluções
                 evolutions = self.get_evolution_data(i)
 
-                gen5_path = res['sprites']['versions']['generation-v']['black-white']['animated']
+                sprites_raw = res['sprites']
+                gen5_animated = sprites_raw['versions']['generation-v']['black-white']['animated']
                 
+                def get_best_sprite(key):
+                    # Tenta o animado, se for None, tenta o estatico da Gen 5
+                    return gen5_animated[key] or sprites_raw[key]
+
                 sprites_map = {
-                    "front": gen5_path['front_default'],
-                    "back": gen5_path['back_default'],
-                    "front_shiny": gen5_path['front_shiny'],
-                    "back_shiny": gen5_path['back_shiny']
+                    "front": get_best_sprite('front_default'),
+                    "back": get_best_sprite('back_default'),
+                    "front_shiny": get_best_sprite('front_shiny'),
+                    "back_shiny": get_best_sprite('back_shiny')
                 }
 
-                # Criando o objeto com o novo Model
+                # Criando o objeto com o Model
                 pokemon = PokemonBaseModel(
                     id=i,
                     name=res['name'].capitalize(),
@@ -104,4 +109,4 @@ class PokemonController:
             except Exception as e:
                 print(f"❌ Erro ao importar ID {i}: {e}")
 
-        print("✨ Database atualizada com novos sprites!")
+        print("✨ Database populada com sucesso!")
