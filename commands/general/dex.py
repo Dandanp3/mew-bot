@@ -43,7 +43,7 @@ class Pokedex(commands.Cog):
         self.controller = PokemonController()
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(os.path.dirname(current_dir))
-        self.cache_dir = os.path.join(project_root, 'cache_gifs')
+        self.cache_dir = os.path.join(project_root, 'cache', 'cache_gifs')
 
     def get_cached_gif(self, pokemon_data, scale=3, is_shiny=False):
         """Gerencia cache diferenciando Normal de Shiny"""
