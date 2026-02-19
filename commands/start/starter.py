@@ -96,7 +96,7 @@ class Starter(commands.Cog):
                     break
     
         if not chosen_pokemon:
-            return await ctx.send(f"❌ {pokemon_name} is not a valid starter. Check the list in `!start`.")
+            return await ctx.send(f"<:letterx:1473913370171408465> {pokemon_name} is not a valid starter. Check the list in `!start`.")
         
         async with ctx.typing():
             try:

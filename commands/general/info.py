@@ -135,7 +135,7 @@ class Info(commands.Cog):
 
         pokemon_data = await self.bot.db.caught_pokemons.find_one(query)
         if not pokemon_data:
-            return await ctx.send("❌ Pokémon não encontrado.")
+            return await ctx.send("<:letterx:1473913370171408465> Pokémon não encontrado.")
 
         base_stats = await self.bot.db.pokemons.find_one({"_id": pokemon_data['species_id']})
         

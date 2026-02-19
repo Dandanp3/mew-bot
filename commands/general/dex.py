@@ -18,14 +18,20 @@ class ShinyButton(discord.ui.View):
     async def toggle_shiny(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.is_shiny = not self.is_shiny
         
-        # Atualiza o botão
-        button.label = "Normal" if self.is_shiny else "Shiny"
-        button.style = discord.ButtonStyle.primary if self.is_shiny else discord.ButtonStyle.secondary
+        if self.is_shiny:
+            button.label = "Back" 
+            button.emoji = "<:back:1473915969704300555>" 
+            button.style = discord.ButtonStyle.primary
+        else:
+            button.label = "Shiny" 
+            button.emoji = "<:stars:1473914179705376778>" 
+            button.style = discord.ButtonStyle.secondary
         
         # Gera/Busca o GIF no cache
         file_path = self.cog.get_cached_gif(self.pokemon_data, is_shiny=self.is_shiny)
         file = discord.File(file_path, filename="pokemon.gif")
         
+        # Recupera o embed atual
         embed = interaction.message.embeds[0]
         embed.set_image(url="attachment://pokemon.gif")
         
