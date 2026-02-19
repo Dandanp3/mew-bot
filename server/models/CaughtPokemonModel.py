@@ -32,13 +32,14 @@ class CaughtPokemonModel:
         
         # Sorteando nature e IVs 
         self.nature = random.choice(list(NATURES_DATA.keys()))
-        self.ivs = {stat: random.randint(0, 31) for stat in ["hp", "attack", "defense", "special_attack", "special_defense", "speed"]}
+        
+        self.ivs = {stat: random.randint(0, 31) for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
         
         # calculo de ivs %
         self.iv_percentage = round((sum(self.ivs.values()) / 186) * 100, 2)
         
         # EVs começam em 0
-        self.evs = {stat: 0 for stat in ["hp", "attack", "defense", "special_attack", "special_defense", "speed"]}
+        self.evs = {stat: 0 for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
         
         self.caught_at = datetime.utcnow()
     
@@ -47,31 +48,46 @@ class CaughtPokemonModel:
         return int(level ** 3)
     
     def calculate_current_stats(self, base_stats: Dict[str, int]) -> Dict[str, int]:
-        # Calcula os status reais aplicando IVs, EVs, lvl e nature
         final_stats = {}
         nature_mod = NATURES_DATA.get(self.nature)
         
-        for stat, base in base_stats.items():
-            iv = self.ivs.get(stat, 0)
-            ev = self.evs.get(stat, 0)
+        # Mapeamento para garantir que o resultado final use nomes curtos
+        stat_map = {
+            "hp": "hp",
+            "attack": "attack",
+            "defense": "defense",
+            "special-attack": "sp_atk",
+            "special_attack": "sp_atk", # Caso venha com underscore
+            "special-defense": "sp_def",
+            "special_defense": "sp_def", # Caso venha com underscore
+            "speed": "speed"
+        }
+        
+        for api_name, base in base_stats.items():
+            # Traduz o nome da API para o seu padrão (sp_atk, etc)
+            my_stat_name = stat_map.get(api_name, api_name)
             
-            if stat == "hp":
+            iv = self.ivs.get(my_stat_name, 0)
+            ev = self.evs.get(my_stat_name, 0)
+            
+            if my_stat_name == "hp":
                 value = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + self.level + 10
-                final_stats[stat] = value
+                final_stats[my_stat_name] = value
             else:
                 modifier = 1.0
-                if nature_mod["buff"] == stat: modifier = 1.1
-                if nature_mod["debuff"] == stat: modifier = 0.9
+                if nature_mod["buff"] == my_stat_name: modifier = 1.1
+                if nature_mod["debuff"] == my_stat_name: modifier = 0.9
                 
                 core_calc = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + 5
-                final_stats[stat] = math.floor(core_calc * modifier)      
-        return final_stats     
+                final_stats[my_stat_name] = math.floor(core_calc * modifier)      
+                
+        return final_stats   
 
     def to_dict(self):
         return {
             "owner_id": self.owner_id,
             "species_id": self.species_id,
-            "name": self.name,
+            "species_name": self.name,
             "nickname": self.nickname,
             "catch_order": self.catch_order,
             "level": self.level,

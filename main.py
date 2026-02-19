@@ -30,7 +30,8 @@ class Mew(commands.Bot):
     async def setup_hook(self):
         extensions = [
             'commands.start.starter',
-            'commands.general.dex'
+            'commands.general.dex',
+            'commands.general.info'
         ] 
         
         for ext in extensions:

@@ -14,7 +14,7 @@ class Starter(commands.Cog):
         
         # Cache Config
         project_root = os.path.dirname(os.path.dirname(current_dir))
-        self.cache_dir = os.path.join(project_root, 'cache' 'cache_gifs')
+        self.cache_dir = os.path.join(project_root, 'cache', 'cache_gifs')
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
     
