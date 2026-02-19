@@ -14,12 +14,12 @@ class ShinyButton(discord.ui.View):
         self.pokemon_data = pokemon_data
         self.is_shiny = False
 
-    @discord.ui.button(label="Ver Shiny", emoji="✨", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Shiny", emoji="✨", style=discord.ButtonStyle.secondary)
     async def toggle_shiny(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.is_shiny = not self.is_shiny
         
         # Atualiza o botão
-        button.label = "Ver Normal" if self.is_shiny else "Ver Shiny"
+        button.label = "Normal" if self.is_shiny else "Shiny"
         button.style = discord.ButtonStyle.primary if self.is_shiny else discord.ButtonStyle.secondary
         
         # Gera/Busca o GIF no cache
@@ -98,7 +98,7 @@ class Pokedex(commands.Cog):
             pokemon_data = self.controller.collection.find_one({"name": pokemon_name})
             
             if not pokemon_data:
-                return await ctx.send(f"❌ Pokémon **{pokemon_name}** não encontrado!")
+                return await ctx.send(f"❌ Pokémon **{pokemon_name}** not found!")
             
             file_path = self.get_cached_gif(pokemon_data, is_shiny=False)
             file = discord.File(file_path, filename="pokemon.gif")

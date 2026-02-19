@@ -32,7 +32,7 @@ class InfoView(View):
 
     async def toggle_callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message("Este menu não é seu!", ephemeral=True)
+            return await interaction.response.send_message("This menu isn’t yours!", ephemeral=True)
         self.is_detailed = not self.is_detailed
         
         new_embed = create_info_embed(self.pokemon_data, self.base_stats, self.is_detailed)
