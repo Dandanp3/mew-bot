@@ -23,7 +23,7 @@ class InfoView(View):
         self.author = author 
         self.is_detailed = is_detailed
 
-        label = "Voltar" if is_detailed else "EVs/Moves"
+        label = "Back" if is_detailed else "EVs/Moves"
         style = discord.ButtonStyle.secondary if is_detailed else discord.ButtonStyle.primary
         
         btn = Button(label=label, style=style)

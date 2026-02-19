@@ -51,7 +51,7 @@ class Starter(commands.Cog):
         trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
         
         if trainer and trainer.get('selected_pokemon_id'):
-            return await ctx.send(f"Olá {ctx.author.mention}, você já começou sua jornada! Use `!info` para ver seu Pokémon.")
+            return await ctx.send(f"Hello {ctx.author.mention}, you’ve already started your journey! Use `!info` to check your Pokémon.")
 
         if not trainer:
             success, msg = await self.bot.trainer_controller.create_trainer(ctx.author.id, ctx.author.name)
@@ -59,8 +59,8 @@ class Starter(commands.Cog):
         # Mostra o Embed de escolha
         data = self.load_starters()
         embed = discord.Embed(
-            title="🌟 Bem-vindo ao Mundo Pokémon!",
-            description=f"Olá {ctx.author.mention}! O Prof. Carvalho está esperando você escolher seu parceiro.\nUse `!pick <nome>` para escolher.",
+            title="🌟 Welcome to the world of Pokémon!",
+            description=f"Hello {ctx.author.mention}! Professor Oak is waiting for you to choose your partner. Use `!pick` <name> to choose",
             color=0xFF0055
         )        
         
@@ -69,7 +69,7 @@ class Starter(commands.Cog):
             line = " - ".join([f"{p['emoji']} **{p['name']}**" for p in pokes])
             embed.add_field(name=f"📍 {gen['region']} (Gen {gen['gen']})", value=line, inline=False)
             
-        embed.set_footer(text="Escolha com sabedoria, essa decisão é para sempre!")
+        embed.set_footer(text="Choose wisely — this decision will last forever!")
         await ctx.send(embed=embed)
         
     @commands.command(name="pick")
@@ -77,10 +77,10 @@ class Starter(commands.Cog):
         # 1. Verifica se o usuário já escolheu
         trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
         if not trainer:
-            return await ctx.send("Você precisa digitar `!start` primeiro!")
+            return await ctx.send("You need to type `!start` first!")
             
         if trainer.get('selected_pokemon_id'):
-            return await ctx.send("Você já escolheu seu inicial! Não seja ganancioso.")
+            return await ctx.send("You’ve already picked your starter! Don’t be greedy.")
 
         # 2. Valida o nome do Pokémon no JSON
         data = self.load_starters()
@@ -96,7 +96,7 @@ class Starter(commands.Cog):
                     break
     
         if not chosen_pokemon:
-            return await ctx.send(f"❌ **{pokemon_name}** não é um inicial válido. Verifique a lista no `!start`.")
+            return await ctx.send(f"❌ {pokemon_name} is not a valid starter. Check the list in `!start`.")
         
         async with ctx.typing():
             try:
@@ -108,7 +108,7 @@ class Starter(commands.Cog):
                 )
 
                 if not poke_mongo_id:
-                    return await ctx.send("Erro: Pokémon não encontrado na Database do Bot.")
+                    return await ctx.send("Error: Pokémon not found in the bot’s database.")
 
                 base_poke = await self.bot.db.pokemons.find_one({"_id": chosen_pokemon['api_id']})
                 types = base_poke['types']
@@ -130,7 +130,7 @@ class Starter(commands.Cog):
                 embed = discord.Embed(color=0x2ecc71)
                 embed.title = f"🎉 {ctx.author.name} escolheu {pokemon_name}!"
                 embed.description = (
-                    f"Sua jornada em **{region_name}** começou!\n"
+                    f"Your journey in **{region_name}** has begun!\n"
                     f"**Nature:** {poke_obj.nature}\n"
                     f"**IVs:** {poke_obj.iv_percentage}%\n"
                     f"**Moves:** {', '.join(poke_obj.moves)}"
