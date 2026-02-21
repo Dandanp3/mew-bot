@@ -31,7 +31,8 @@ class Mew(commands.Bot):
         extensions = [
             'commands.start.starter',
             'commands.general.dex',
-            'commands.general.info'
+            'commands.general.info',
+            'server.controllers.emojiSetup'
         ] 
         
         for ext in extensions:
