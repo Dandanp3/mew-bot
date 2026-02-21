@@ -32,7 +32,8 @@ class Mew(commands.Bot):
             'commands.start.starter',
             'commands.general.dex',
             'commands.general.info',
-            'server.controllers.emojiSetup'
+            'server.controllers.emojiSetup',
+            'commands.general.pokemons'
         ] 
         
         for ext in extensions:
