@@ -4,9 +4,9 @@
       "gen": "I",
       "region": "Kanto",
       "pokes": [
-        { "name": "Bulbasaur", "api_id": 1, "emoji": "<:bulbasaur1:1472271345135128607>" },
-        { "name": "Charmander", "api_id": 4, "emoji": "<:charmander4:1472271358703435899>" },
-        { "name": "Squirtle", "api_id": 7, "emoji": "<:squirtle7:1472271332732440730>" }
+        { "name": "Bulbasaur", "api_id": 1, "emoji": "<:pkmn_1:1474601467158466613>" },
+        { "name": "Charmander", "api_id": 4, "emoji": "<:pkmn_4:1474601536859668540>" },
+        { "name": "Squirtle", "api_id": 7, "emoji": "<:pkmn_7:1474601599744737460>" }
       ]
     }
   ]
