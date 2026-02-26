@@ -57,14 +57,13 @@ class CaughtPokemonModel:
             "attack": "attack",
             "defense": "defense",
             "special-attack": "sp_atk",
-            "special_attack": "sp_atk", # Caso venha com underscore
+            "special_attack": "sp_atk", 
             "special-defense": "sp_def",
-            "special_defense": "sp_def", # Caso venha com underscore
+            "special_defense": "sp_def",
             "speed": "speed"
         }
         
         for api_name, base in base_stats.items():
-            # Traduz o nome da API para o seu padrão (sp_atk, etc)
             my_stat_name = stat_map.get(api_name, api_name)
             
             iv = self.ivs.get(my_stat_name, 0)
