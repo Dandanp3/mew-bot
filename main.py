@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
 
-# Import dos seus Controllers
+# controllers
 from server.controllers.trainerController import TrainerController
 from server.controllers.catchController import CatchController
+from server.controllers.serverController import ServerController
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -25,6 +26,7 @@ class Mew(commands.Bot):
         
         self.trainer_controller = TrainerController(self.db)
         self.catch_controller = CatchController(self.db)
+        self.server_controller = ServerController(self.db)
         self.add_check(self.check_starter_chosen)
 
     async def setup_hook(self):
@@ -33,7 +35,9 @@ class Mew(commands.Bot):
             'commands.general.dex',
             'commands.general.info',
             'server.controllers.emojiSetup',
-            'commands.general.pokemons'
+            'commands.general.pokemons',
+            
+            'commands.general.spawn'
         ] 
         
         for ext in extensions:

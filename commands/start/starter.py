@@ -101,6 +101,7 @@ class Starter(commands.Cog):
         async with ctx.typing():
             try:
                 # CRIA O POKÉMON NO BANCO 
+                # O poke_obj retornado aqui já terá o gênero sorteado pelo Model
                 poke_mongo_id, poke_obj = await self.bot.catch_controller.create_specific_pokemon(
                     owner_id=ctx.author.id,
                     species_id=chosen_pokemon['api_id'],
@@ -120,6 +121,9 @@ class Starter(commands.Cog):
                     region=region_name,
                     types=types
                 )
+                
+                g_icon = "<:male:1474064177768300638>" if poke_obj.gender == "Male" else "<:female:1474064165768532058>"
+
                 try:
                     gif_url = base_poke['sprites']['front'] 
                     if not gif_url:
@@ -130,7 +134,8 @@ class Starter(commands.Cog):
                 embed = discord.Embed(color=0x2ecc71)
                 embed.title = f"🎉 {ctx.author.name} escolheu {pokemon_name}!"
                 embed.description = (
-                    f"Your journey in **{region_name}** has begun!\n"
+                    f"Your journey in **{region_name}** has begun!\n\n"
+                    f"**Gender:** {poke_obj.gender} {g_icon}\n" 
                     f"**Nature:** {poke_obj.nature}\n"
                     f"**IVs:** {poke_obj.iv_percentage}%\n"
                     f"**Moves:** {', '.join(poke_obj.moves)}"

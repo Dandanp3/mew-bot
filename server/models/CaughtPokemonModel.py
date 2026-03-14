@@ -12,6 +12,7 @@ class CaughtPokemonModel:
                  catch_order: int,
                  level: Optional[int] = None,
                  nickname: str = None,
+                 gender: str = None, # Novo parâmetro opcional
                  initial_moves: List[str] = None):
         
         self.owner_id = owner_id
@@ -19,8 +20,13 @@ class CaughtPokemonModel:
         self.name = species_name
         self.nickname = nickname
         self.catch_order = catch_order
+    
+        if gender:
+            self.gender = gender
+        else:
+            self.gender = random.choice(["Male", "Female"])
         
-        # Lvl aleatório de 1-40 ou definido (ex: inicial)
+        # Lvl aleatório de 1-40
         self.level = level if level is not None else random.randint(1, 40)
         self.total_xp = self._calculate_xp_for_level(self.level)
         
@@ -42,46 +48,7 @@ class CaughtPokemonModel:
         self.evs = {stat: 0 for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
         
         self.caught_at = datetime.utcnow()
-    
-    def _calculate_xp_for_level(self, level: int) -> int:
-        # Fórmula de n^3
-        return int(level ** 3)
-    
-    def calculate_current_stats(self, base_stats: Dict[str, int]) -> Dict[str, int]:
-        final_stats = {}
-        nature_mod = NATURES_DATA.get(self.nature)
-        
-        # Mapeamento para garantir que o resultado final use nomes curtos
-        stat_map = {
-            "hp": "hp",
-            "attack": "attack",
-            "defense": "defense",
-            "special-attack": "sp_atk",
-            "special_attack": "sp_atk", # Caso venha com underscore
-            "special-defense": "sp_def",
-            "special_defense": "sp_def", # Caso venha com underscore
-            "speed": "speed"
-        }
-        
-        for api_name, base in base_stats.items():
-            # Traduz o nome da API para o seu padrão (sp_atk, etc)
-            my_stat_name = stat_map.get(api_name, api_name)
-            
-            iv = self.ivs.get(my_stat_name, 0)
-            ev = self.evs.get(my_stat_name, 0)
-            
-            if my_stat_name == "hp":
-                value = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + self.level + 10
-                final_stats[my_stat_name] = value
-            else:
-                modifier = 1.0
-                if nature_mod["buff"] == my_stat_name: modifier = 1.1
-                if nature_mod["debuff"] == my_stat_name: modifier = 0.9
-                
-                core_calc = math.floor(((2 * base + iv + (ev // 4)) * self.level) / 100) + 5
-                final_stats[my_stat_name] = math.floor(core_calc * modifier)      
-                
-        return final_stats   
+
 
     def to_dict(self):
         return {
@@ -89,6 +56,7 @@ class CaughtPokemonModel:
             "species_id": self.species_id,
             "species_name": self.name,
             "nickname": self.nickname,
+            "gender": self.gender, 
             "catch_order": self.catch_order,
             "level": self.level,
             "is_shiny": self.is_shiny,

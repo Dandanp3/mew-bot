@@ -48,6 +48,15 @@ def create_info_embed(pokemon, base, detailed=False):
     stats = pokemon.get('stats', {})
     ivs = pokemon.get('ivs', {})
     
+    # --- LÓGICA DE GÊNERO ---
+    gender = pokemon.get('gender', 'Unknown')
+    if gender == 'Male':
+        g_icon = "♂️"
+    elif gender == 'Female':
+        g_icon = "♀️"
+    else:
+        g_icon = "❓"
+    
     # Normalização de nomes de stats
     sp_atk = stats.get('sp_atk') or stats.get('special_attack', 0)
     sp_def = stats.get('sp_def') or stats.get('special_defense', 0)
@@ -59,17 +68,19 @@ def create_info_embed(pokemon, base, detailed=False):
     shiny_prefix = "✨ " if pokemon.get('is_shiny') else ""
     name = pokemon.get('species_name', 'Unknown').title()
     
+    # Adicionamos o ícone de gênero no título para dar mais vida
     embed = discord.Embed(
-        title=f"Level {pokemon.get('level', 5)} {shiny_prefix}{name}",
+        title=f"Level {pokemon.get('level', 5)} {shiny_prefix}{name} {g_icon}",
         color=embed_color
     )
 
     if not detailed:
+        # Mostramos o nome do gênero por extenso nos detalhes
         details_text = (
             f"**XP:** {pokemon.get('xp', 0)}/2025\n"
             f"**Nature:** {pokemon.get('nature', 'Unknown')}\n"
-            f"**Gender:** {pokemon.get('gender', 'Unknown')}\n"
-            f"\u200b" # Linha vazia para respiro
+            f"**Gender:** {gender} {g_icon}\n"
+            f"\u200b" 
         )
         embed.add_field(name="Details", value=details_text, inline=False)
 

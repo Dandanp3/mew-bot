@@ -1,6 +1,6 @@
 NATURES_DATA = {
     "Adamant": {"buff": "attack", "debuff": "special_attack"},
-    "Bashful": {"buff": None, "debuff": None}, # Neutra
+    "Bashful": {"buff": None, "debuff": None}, 
     "Bold":    {"buff": "defense", "debuff": "attack"},
     "Brave":   {"buff": "attack", "debuff": "speed"},
     "Calm":    {"buff": "special_defense", "debuff": "attack"},
