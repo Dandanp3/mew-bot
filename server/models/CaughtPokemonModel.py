@@ -13,7 +13,8 @@ class CaughtPokemonModel:
                  level: Optional[int] = None,
                  nickname: str = None,
                  gender: str = None, # Novo parâmetro opcional
-                 initial_moves: List[str] = None):
+                 initial_moves: List[str] = None,
+                 is_shiny: bool = False):
         
         self.owner_id = owner_id
         self.species_id = species_id
@@ -33,8 +34,7 @@ class CaughtPokemonModel:
         # Lista de moves 
         self.moves = initial_moves if initial_moves else []
         
-        # Lógica shiny (0.2% de chance)
-        self.is_shiny = random.randint(1, 500) == 1
+        self.is_shiny = is_shiny
         
         # Sorteando nature e IVs 
         self.nature = random.choice(list(NATURES_DATA.keys()))

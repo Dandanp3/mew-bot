@@ -140,7 +140,7 @@ class Pokedex(commands.Cog):
                 embed.add_field(name="Evolution", value=evo_txt, inline=False)
 
             embed.set_image(url="attachment://pokemon.gif")
-            embed.set_footer(text="Database Mew Bot • Gen 5 Animated")
+            embed.set_footer(text="Database Mew Bot")
             
             view = ShinyButton(self, pokemon_data)
             
