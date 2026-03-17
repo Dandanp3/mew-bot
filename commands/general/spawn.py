@@ -49,9 +49,9 @@ class PokemonSpawn(commands.Cog):
             pokemon_data = None
             
             # Sortear pokemons
-            is_legendary_roll = randint(1, 5) <= 2
+            is_legendary_roll = randint(1, 1000) <= 2
             # sorteio shiny 2% por enquanto
-            is_shiny = randint(1, 2) == 1 
+            is_shiny = randint(1, 500) == 1 
             
             # escolhendo o pokemon
             # pega um lendario da lista se for verdade
