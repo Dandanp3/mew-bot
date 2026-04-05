@@ -2,16 +2,17 @@ import os
 import random
 from PIL import Image, ImageSequence
 from io import BytesIO
+import requests
 
 class SpawnController:
     def __init__(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(os.path.dirname(current_dir))
+        self.project_root = os.path.dirname(os.path.dirname(current_dir))
         
         
         self.bg_dir = os.path.join(project_root, 'cache', 'Background')
         
-        # Formato: "nome_do_tipo": (pos_x, pos_y)
+        # Formato: (pos_x, pos_y)
         self.bg_positions = {
             "fire": (150, 250),   
             "water": (150, 180),  
@@ -46,9 +47,32 @@ class SpawnController:
                 
                 break
         
-    def get_image_data(self):
+    def get_image_data(self, pokemon_id, pokemon_name, is_shiny):
         
-        self.pokemon_sprite = os.path.join(project_root, 'cache', 'cache_gifs', '')     
+        if is_shiny:
+            nome_do_arquivo = f"Shiny_{pokemon_name}.gif"
+        else:
+            nome_do_arquivo = f"{pokemon_name}.gif"
+        
+        # Usando a funçao de pegar regiao
+        regiao = self.get_region_folder(pokemon_id)
+        caminho_sprite = os.path.join(self.project_root, 'cache/cache_gifs/', regiao, nome_do_arquivo)
+        
+        if os.path.exists(caminho_sprite):
+            # pula
+        else:
+            data = self.get_image_data(pokemon_id)
+            
+            if is_shiny:
+                url_gif = data['sprites']['versions']['generation-v']['black-white']['animated']['front_shiny']
+            else:
+                url_gif = data['sprites']['versions']['generation-v']['black-white']['animated']['front_default']
+        
+        
+        
+        self.pokemon_sprite = os.path.join(project_root, 'cache', 'cache_gifs', '')    
+        
+         
         
 
             
