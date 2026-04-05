@@ -5,7 +5,7 @@ from io import BytesIO
 import requests
 
 class SpawnController:
-    def __init__(self):
+    def __init__(self, project_root):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.project_root = os.path.dirname(os.path.dirname(current_dir))
         
@@ -46,9 +46,43 @@ class SpawnController:
                     return caminho_completo, coords
                 
                 break
+            
+    # Funçao para redimensionar o tamanho dos sprites
+    def process_and_save_gif(self, img_original, caminho_salvamento, escala=3):
+        frames_redimensionados = []
         
-    def get_image_data(self, pokemon_id, pokemon_name, is_shiny):
+        for frame in ImageSequence.Iterator(img_original):
+            # converter para rgba (n perde transparencia)
+            frame_rgba = frame.convert("RGBA")
+            
+            #calculando novas dimensões
+            nova_largura = int(frame_rgba.width * escala)
+            nova_altura = int(frame_rgba.height * escala)
+            
+            # redimensionando 
+            frame_grande = frame_rgba.resize((nova_largura, nova_altura), Image.NEAREST)
+            frames_redimensionados.append(frame_grande)
         
+        #salvando lisrta de frames
+        duracao_original = img_original.info.get('duration', 100)
+        
+        frames_redimensionados[0].save(
+            caminho_salvamento,
+            save_all=True,
+            append_images=frames_redimensionados[1:],
+            duration=duracao_original,
+            loop=0,
+            disposal=2   
+        )
+        return caminho_salvamento
+        
+        
+        
+    def get_image_data(self, pokemon_data, is_shiny):
+        pokemon_id = pokemon_data['id']
+        pokemon_name = pokemon_data['name'].lower()
+        
+        # definindo nome do arquivo
         if is_shiny:
             nome_do_arquivo = f"Shiny_{pokemon_name}.gif"
         else:
@@ -56,21 +90,61 @@ class SpawnController:
         
         # Usando a funçao de pegar regiao
         regiao = self.get_region_folder(pokemon_id)
-        caminho_sprite = os.path.join(self.project_root, 'cache/cache_gifs/', regiao, nome_do_arquivo)
+        caminho_sprite = os.path.join(self.project_root, 'cache', 'cache_gifs', regiao, nome_do_arquivo)
         
+        # verifica se ja existe no cache
         if os.path.exists(caminho_sprite):
-            # pula
+            return caminho_sprite
+        
+        # se nao, vai fazer um
         else:
-            data = self.get_image_data(pokemon_id)
+            
+            gen5 = pokemon_data['sprites']['versions']['generation-v']['black-white']['animated']
             
             if is_shiny:
-                url_gif = data['sprites']['versions']['generation-v']['black-white']['animated']['front_shiny']
+                url_gif = gen5['front_shiny']
             else:
-                url_gif = data['sprites']['versions']['generation-v']['black-white']['animated']['front_default']
+                url_gif = gen5['front_default']
+        
+            sprite_baixado = requests.get(url_gif).content
+            img = Image.open(BytesIO(sprite_baixado))
+            
+            return self.process_and_save_gif(img, caminho_sprite)
+    
+    def create_final_spawn_gif(self, caminho_pokemon, caminho_bg, coords):
+        pkm_gif = Image.open(caminho_pokemon)
+        bg_image = Image.open(caminho_bg).convert("RGBA")
+        
+        final_frames = []
+        
+        for frame in ImageSequence.Iterator(pkm_gif):
+            # cria uma copia do fundo pra esse frame
+            temp_bg = bg_image.copy()
+            
+            # converter para rgba por segurança
+            p_frame = frame.convert("RGBA")
+            
+            #colando pokemon no fundo
+            temp_bg.paste(p_frame, coords, p_frame)
+            final_frames.append(temp_bg)
+        
+        # transforma a lista em um arquivo de bytes
+        output = BytesIO()
+        final_frames[0].save(
+            output,
+            format="GIF",
+            save_all=True,
+            append_images=final_frames[1:],
+            duration=pkm_gif.info.get('duration', 100),
+            loop=0,
+            disposal=2
+        )
+        output.seek(0)
+        return output
         
         
         
-        self.pokemon_sprite = os.path.join(project_root, 'cache', 'cache_gifs', '')    
+        
         
          
         
