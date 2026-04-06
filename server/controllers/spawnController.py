@@ -47,7 +47,6 @@ class SpawnController:
         
         if os.path.exists(caminho_completo):
             return caminho_completo
-        r
         try:
             arquivos = os.listdir(self.bg_dir)
             # Procurar por um arquivo que comece com o tipo
