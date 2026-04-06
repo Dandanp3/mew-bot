@@ -5,15 +5,14 @@ import random
 import json
 import requests
 
-
-
 class PokemonSpawn(commands.Cog):
-    def __init__(self, bot, controller):
+    def __init__(self, bot, server_controller, spawn_controller):
         self.bot = bot
-        self.controller = controller
+        self.server_controller = server_controller
+        self.spawn_controller = spawn_controller
         self.spawns = {}
+        self.admin_id = 505806599034765323  
         
-        # Pegando os lendários disponiveis
         try:
             with open('legendaries.json', 'r') as f:
                 self.legendaries = json.load(f)
@@ -28,85 +27,95 @@ class PokemonSpawn(commands.Cog):
             return response.json()
         return None
 
+    async def send_spawn_message(self, channel, pokemon_data, is_shiny=False, is_legendary=False):
+        name = pokemon_data['name'].capitalize()
+        
+        # gera a imagem usando o controller
+        caminho_bg, coords = self.spawn_controller.get_background_data(pokemon_data['types'])
+        caminho_pokemon = self.spawn_controller.get_image_data(pokemon_data, is_shiny)
+        gif_final_bytes = self.spawn_controller.create_final_spawn_gif(caminho_pokemon, caminho_bg, coords)
+        
+        if is_legendary:
+            status = "✨ UM LENDÁRIO APARECEU ✨"
+        elif is_shiny:
+            status = "🌟 UM POKÉMON SHINY APARECEU 🌟"
+        else:
+            status = "Um pokémon selvagem apareceu!"
+            
+        arquivo_discord = discord.File(fp=gif_final_bytes, filename="pokemon_spawn.gif")
+        embed = discord.Embed(title=status, description=f"É um {name}!", color=discord.Color.random())
+        embed.set_image(url="attachment://pokemon_spawn.gif")
+        
+        await channel.send(embed=embed, file=arquivo_discord)
+
     async def increment_message(self, server_id):
-        # Inicializa o cache do servidor se n existir
         if server_id not in self.spawns:
-            channel_id = await self.controller.get_chat_id(server_id)
+            channel_id = await self.server_controller.get_chat_id(server_id)
             self.spawns[server_id] = {
                 "current": 0,
-                "target": 2, 
+                "target": 10, 
                 "channel_id": channel_id
             }
 
         server_spawn = self.spawns[server_id]
         server_spawn["current"] += 1
 
-        # Contador
         if server_spawn["current"] >= server_spawn["target"]:
             server_spawn["current"] = 0
-            server_spawn["target"] = randint(1, 3)
+            server_spawn["target"] = randint(20, 50) 
             
-            pokemon_data = None
-            
-            # Sortear pokemons
-            is_legendary_roll = randint(1, 1000) <= 2
-            # sorteio shiny 2% por enquanto
+            # Sorteios
+            is_legendary = randint(1, 1000) <= 2
             is_shiny = randint(1, 500) == 1 
             
-            # escolhendo o pokemon
-            # pega um lendario da lista se for verdade
-            if is_legendary_roll:
-                pokemon_name = random.choice(self.legendaries)
-                pokemon_data = self.get_pokemon_data(pokemon_name)
-                # pegar o ID na API dps
+            if is_legendary:
+                pkm_name = random.choice(self.legendaries)
+                pokemon_data = self.get_pokemon_data(pkm_name)
             else:
                 while True:
-                    possible_id = randint(1, 151)
-                    data = self.get_pokemon_data(possible_id)
-                    
-                    # Verificando se nao eh lendario
+                    data = self.get_pokemon_data(randint(1, 151))
                     if data and data['name'].lower() not in [n.lower() for n in self.legendaries]:
                         pokemon_data = data
                         break
             
-            # enviar para o dc
-            if pokemon_data:
-                name = pokemon_data['name'].capitalize()
-                # pega a imagem shiny ou normal
-                gen5_sprites = pokemon_data['sprites']['versions']['generation-v']['black-white']['animated']
+            channel = self.bot.get_channel(server_spawn["channel_id"]) or \
+                      await self.bot.fetch_channel(server_spawn["channel_id"])
             
-                if is_shiny:
-                    sprite_url = gen5_sprites['front_shiny'] or pokemon_data['sprites']['front_shiny']
-                else:
-                    sprite_url = gen5_sprites['front_default'] or pokemon_data['sprites']['front_default']
+            if channel:
+                await self.send_spawn_message(channel, pokemon_data, is_shiny, is_legendary)
 
-                status = "UM POKEMON SHINY APARECEU" if is_shiny else "Um pokemon selvagem apareceu"
-                if is_legendary_roll:
-                    status = f"UM LENDARIO APARECEU"
-                
-                channel = self.bot.get_channel(server_spawn["channel_id"]) or \
-                          await self.bot.fetch_channel(server_spawn["channel_id"])
-                          
-                if channel:
-                    embed = discord.Embed(title=status, description=f"É um {name}")
-                    embed.set_image(url=sprite_url)
-                    await channel.send(embed=embed)
-                
-                
-                
-                
-            
+    # comando admin pokespawn
+    @commands.command(name="pokespawn")
+    async def force_spawn(self, ctx, pokemon_name: str):
+        # Verifica ID
+        if ctx.author.id != self.admin_id:
+            return # Simplesmente ignora 
+
+        pokemon_data = self.get_pokemon_data(pokemon_name)
+        
+        if not pokemon_data:
+            return await ctx.send(f"❌ Pokémon '{pokemon_name}' não encontrado na PokeAPI.")
+
+        # Verifica se é lendário ou shiny 
+        is_legendary = pokemon_data['name'].lower() in [n.lower() for n in self.legendaries]
+        
+        await self.send_spawn_message(ctx.channel, pokemon_data, is_shiny=False, is_legendary=is_legendary)
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        # ignora ele e outros bots
+        # Ignora bots e DMs
         if message.author.bot or not message.guild:
             return
             
+        # NÃO soma se for um comando do bot 
+        prefix = await self.bot.get_prefix(message)
+        if isinstance(prefix, list): 
+            if any(message.content.startswith(p) for p in prefix):
+                return
+        elif message.content.startswith(prefix):
+            return
+            
         await self.increment_message(message.guild.id)
-    
-    
-
 
 async def setup(bot):
-    await bot.add_cog(PokemonSpawn(bot, bot.server_controller))
+    await bot.add_cog(PokemonSpawn(bot, bot.server_controller, bot.spawn_controller))

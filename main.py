@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from server.controllers.trainerController import TrainerController
 from server.controllers.catchController import CatchController
 from server.controllers.serverController import ServerController
+from server.controllers.spawnController import SpawnController
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -27,6 +28,7 @@ class Mew(commands.Bot):
         self.trainer_controller = TrainerController(self.db)
         self.catch_controller = CatchController(self.db)
         self.server_controller = ServerController(self.db)
+        self.spawn_controller = SpawnController("C:/Projetos/Mew Bot")
         self.add_check(self.check_starter_chosen)
 
     async def setup_hook(self):
