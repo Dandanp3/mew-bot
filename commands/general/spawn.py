@@ -30,10 +30,25 @@ class PokemonSpawn(commands.Cog):
     async def send_spawn_message(self, channel, pokemon_data, is_shiny=False, is_legendary=False):
         name = pokemon_data['name'].capitalize()
         
-        # gera a imagem usando o controller
-        caminho_bg, coords = self.spawn_controller.get_background_data(pokemon_data['types'])
+        # ✅ NOVO: Obter configuração do Pokémon (x, y, bg)
+        pokemon_config = self.spawn_controller.get_pokemon_config(pokemon_data['name'])
+        
+        # ✅ NOVO: Usar o background definido em coords.py
+        caminho_bg = self.spawn_controller.get_background_path(pokemon_config['bg'])
+        
+        if not caminho_bg:
+            print(f"⚠️ Aviso: Background '{pokemon_config['bg']}' não encontrado para {name}")
+            return
+        
+        # Obter sprite do Pokémon
         caminho_pokemon = self.spawn_controller.get_image_data(pokemon_data, is_shiny)
-        gif_final_bytes = self.spawn_controller.create_final_spawn_gif(caminho_pokemon, caminho_bg, coords)
+        
+        # Criar GIF final (passa pokemon_name para pegar coordenadas)
+        gif_final_bytes = self.spawn_controller.create_final_spawn_gif(
+            caminho_pokemon, 
+            caminho_bg, 
+            pokemon_data['name']
+        )
         
         if is_legendary:
             status = "✨ UM LENDÁRIO APARECEU ✨"
