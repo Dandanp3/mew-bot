@@ -6,7 +6,7 @@ class CatchController:
         self.pokemon_collection = db['pokemons'] 
         self.caught_collection = db['caught_pokemons'] 
 
-    async def create_specific_pokemon(self, owner_id: int, species_id: int, level: int = 5): 
+    async def create_specific_pokemon(self, owner_id: int, species_id: int, catch_order: int, level: int = 5): 
         base_data = await self.pokemon_collection.find_one({"_id": species_id})
         if not base_data:
             return None, "Pokémon não encontrado na base de dados."
@@ -20,7 +20,7 @@ class CatchController:
             owner_id=owner_id,
             species_id=species_id,
             species_name=base_data['name'],
-            catch_order=await self.caught_collection.count_documents({"owner_id": owner_id}) + 1,
+            catch_order=catch_order,
             level=level,
             initial_moves=initial_moves
         )

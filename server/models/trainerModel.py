@@ -53,7 +53,7 @@ class TrainerModel:
         self.xp += amount
         leveled_up = False
         
-        while self.xp >= self.xp_to_next:
+        while self.xp >= self.xp_to_next_level:
             self.xp -= self.xp_to_next_level
             self.level += 1
             self.xp_to_next_level = self._calculate_xp_required(self.level)
@@ -90,7 +90,7 @@ class TrainerModel:
             "level": self.level,
             "xp": self.xp,
             "xp_to_next_level": self.xp_to_next_level,
-            "selected_pokemon": self.selected_pokemon_id,
+            "selected_pokemon_id": self.selected_pokemon_id,  
             "total_caught": self.total_caught,
             "pokedex_ids": self.pokedex_ids,
             "pokedex_count": len(self.pokedex_ids),
@@ -101,3 +101,25 @@ class TrainerModel:
                 "types": self.type_counts
             }
         }
+    
+    @classmethod
+    def from_dict(cls, data: dict):
+        trainer = cls(
+            discord_id=data.get("_id") or data.get("discord_id"),
+            username=data.get("username", "Unknown")
+        )
+        
+        trainer.pokedollars = data.get("pokedollars", 0)
+        trainer.level = data.get("level", 1)
+        trainer.xp = data.get("xp", 0)
+        trainer.xp_to_next_level = data.get("xp_to_next_level", 750)
+        trainer.total_caught = data.get("total_caught", 0)
+        trainer.pokedex_ids = data.get("pokedex_ids", [])
+        trainer.inventory = data.get("inventory", {})
+        trainer.selected_pokemon_id = data.get("selected_pokemon_id")  # ✅ CORRIGIDO
+        
+        stats = data.get("stats", {})
+        trainer.region_counts = stats.get("regions", trainer.region_counts)
+        trainer.type_counts = stats.get("types", trainer.type_counts)
+        
+        return trainer

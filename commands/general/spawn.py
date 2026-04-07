@@ -4,10 +4,14 @@ from random import randint
 import random
 import json
 import requests
+from server.models.caughtPokemonModel import CaughtPokemonModel
+from server.models.trainerModel import TrainerModel
 
 class PokemonSpawn(commands.Cog):
     def __init__(self, bot, server_controller, spawn_controller):
         self.bot = bot
+        self.pokemon_collection = bot.db['pokemons']
+        self.caught_collection = bot.db['caught_pokemons']
         self.server_controller = server_controller
         self.spawn_controller = spawn_controller
         self.spawns = {}
@@ -21,20 +25,13 @@ class PokemonSpawn(commands.Cog):
             print(f"⚠️ Erro ao carregar legendaries.json: {e}")
             self.legendaries = []
             
-    def get_pokemon_data(self, pokemon_id_or_name):
-        url = f"https://pokeapi.co/api/v2/pokemon/{str(pokemon_id_or_name).lower()}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
 
     async def send_spawn_message(self, channel, pokemon_data, is_shiny=False, is_legendary=False):
         name = pokemon_data['name'].capitalize()
         
-        # ✅ NOVO: Obter configuração do Pokémon (x, y, bg)
         pokemon_config = self.spawn_controller.get_pokemon_config(pokemon_data['name'])
         
-        # ✅ NOVO: Usar o background definido em coords.py
+
         caminho_bg = self.spawn_controller.get_background_path(pokemon_config['bg'])
         
         if not caminho_bg:
@@ -94,7 +91,8 @@ class PokemonSpawn(commands.Cog):
                 }
             else:
                 while True:
-                    data = self.get_pokemon_data(randint(1, 151))
+                    random_id = randint(1, 151)
+                    data = await self.pokemon_collection.find_one({"_id": random_id}) 
                     if data and data['name'].lower() not in [n.lower() for n in self.legendaries]:
                         pokemon_data = data
                         self.active_spawns[server_id] = {
@@ -109,29 +107,61 @@ class PokemonSpawn(commands.Cog):
             if channel:
                 await self.send_spawn_message(channel, pokemon_data, is_shiny, is_legendary)
         
-    # Comando de captura
     @commands.command(name="catch")
     async def catch_command(self, ctx, *, pokemon_name: str):
         pokemon_name = pokemon_name.strip().lower()
-        trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
+        
+        # Pega os dados do banco
+        trainer_data = await self.bot.trainer_controller.get_trainer(ctx.author.id)
+        
+        if not trainer_data:
+            return await ctx.send("❌ Você precisa iniciar sua jornada primeiro! Use !start.")
+        trainer = TrainerModel.from_dict(trainer_data)
         
         if ctx.guild.id in self.active_spawns:
             spawn_data = self.active_spawns[ctx.guild.id]
-            # compara o pokemon com o dicionario de pokemons spawnados em servidores
+            
             if pokemon_name == spawn_data["name"].lower():
-                # limpa o pokemon do dict do server atual
-                if spawn_data["shiny"]:
-                    await ctx.send(f"{ctx.author.mention} Congratulations! You cauptured a **SHINY** {pokemon_name}!")
-                else:
-                    await ctx.send(f"{ctx.author.mention} Congratulations! You cauptured a {pokemon_name}!")
-                del self.active_spawns[ctx.guild.id]
+                pokemon_name_formatado = pokemon_name.capitalize()
                 
+                # Busca os dados base do pokémon
+                pokemon_base = await self.pokemon_collection.find_one({"name": pokemon_name_formatado})
+                
+                if not pokemon_base:
+                    return await ctx.send("Pokémon não encontrado no banco de dados!")
+                
+                pokemon_id = pokemon_base["_id"]
+                pokemon_types = pokemon_base["types"]
+                
+                # Logica de Regiao
+                if pokemon_id <= 151: region = "Kanto"
+                elif pokemon_id <= 251: region = "Johto"
+                elif pokemon_id <= 386: region = "Hoenn"
+                elif pokemon_id <= 493: region = "Sinnoh"
+                else: region = "Unova"
+                
+                # registra a captura 
+                trainer.register_catch(pokemon_id, region, pokemon_types)
+                level_sorteado = random.randint(1, 40)
+                
+                await self.bot.catch_controller.create_specific_pokemon(
+                    ctx.author.id,
+                    pokemon_id,
+                    trainer.total_caught,
+                    level_sorteado
+                )
+                
+                #salva o treinador atualizado no banco
+                await self.bot.trainer_controller.update_trainer(trainer)
+                
+                # Mensagem de sucesso
+                status_shiny = "**SHINY** " if spawn_data["shiny"] else ""
+                await ctx.send(f"{ctx.author.mention} Congratulations! You captured a {status_shiny}{pokemon_name_formatado} level {level_sorteado}! (Nº {trainer.total_caught})")
+                
+                del self.active_spawns[ctx.guild.id]
             else:
                 await ctx.send("Wrong pokemon.")
-                
             
-        
-    
     
     # comando admin pokespawn
     @commands.command(name="pokespawn")

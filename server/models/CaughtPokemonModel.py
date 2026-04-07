@@ -12,7 +12,7 @@ class CaughtPokemonModel:
                  catch_order: int,
                  level: Optional[int] = None,
                  nickname: str = None,
-                 gender: str = None, # Novo parâmetro opcional
+                 gender: str = None, 
                  initial_moves: List[str] = None,
                  is_shiny: bool = False):
         
@@ -41,7 +41,7 @@ class CaughtPokemonModel:
         
         self.ivs = {stat: random.randint(0, 31) for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
         
-        # calculo de ivs %
+        # Cálculo de ivs % 
         self.iv_percentage = round((sum(self.ivs.values()) / 186) * 100, 2)
         
         # EVs começam em 0
@@ -49,6 +49,45 @@ class CaughtPokemonModel:
         
         self.caught_at = datetime.utcnow()
 
+    def _calculate_xp_for_level(self, level: int) -> int:
+        return int(math.pow(level, 3))
+
+    def calculate_current_stats(self, base_stats: Dict[str, int]) -> Dict[str, int]:
+        stats = {}
+        nature_data = NATURES_DATA.get(self.nature, {})
+        
+        # Mapping dos nomes dos stats da API para internos
+        stat_mapping = {
+            "hp": "hp",
+            "attack": "attack",
+            "defense": "defense",
+            "sp_atk": "special_attack",
+            "sp_def": "special_defense",
+            "speed": "speed"
+        }
+        
+        for stat_key, base_stat_key in stat_mapping.items():
+            base_stat = base_stats.get(base_stat_key, 0)
+            iv = self.ivs.get(stat_key, 0)
+            ev = self.evs.get(stat_key, 0)
+            
+            if stat_key == "hp":
+                # Fórmula do HP 
+                stat_value = int(((2 * base_stat + iv + (ev / 4)) * self.level / 100) + self.level + 5)
+            else:
+                # Formula dos outros stats
+                stat_value = int(((2 * base_stat + iv + (ev / 4)) * self.level / 100) + 5)
+                
+                # Aplicar modificador da nature (buff/debuff)
+                if nature_data.get("buff") == stat_key:
+                    stat_value = int(stat_value * 1.1)  # +10% de boost
+                elif nature_data.get("debuff") == stat_key:
+                    stat_value = int(stat_value * 0.9)  # -10% de redução
+            
+            # Mínimo de 1 para garantir que nenhum stat seja 0
+            stats[stat_key] = max(1, stat_value)
+        
+        return stats
 
     def to_dict(self):
         return {

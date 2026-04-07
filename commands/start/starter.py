@@ -51,7 +51,7 @@ class Starter(commands.Cog):
         trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
         
         if trainer and trainer.get('selected_pokemon_id'):
-            return await ctx.send(f"Hello {ctx.author.mention}, you’ve already started your journey! Use `!info` to check your Pokémon.")
+            return await ctx.send(f"Hello {ctx.author.mention}, you've already started your journey! Use `!info` to check your Pokémon.")
 
         if not trainer:
             success, msg = await self.bot.trainer_controller.create_trainer(ctx.author.id, ctx.author.name)
@@ -74,15 +74,15 @@ class Starter(commands.Cog):
         
     @commands.command(name="pick")
     async def pick(self, ctx, pokemon_name: str):
-        # 1. Verifica se o usuário já escolheu
+        # Verifica se o usuario ja escolheu
         trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
         if not trainer:
             return await ctx.send("You need to type `!start` first!")
             
         if trainer.get('selected_pokemon_id'):
-            return await ctx.send("You’ve already picked your starter! Don’t be greedy.")
+            return await ctx.send("You've already picked your starter! Don't be greedy.")
 
-        # 2. Valida o nome do Pokémon no JSON
+        # Valida o nome do Pokémon no JSON
         data = self.load_starters()
         pokemon_name = pokemon_name.strip().capitalize()
         chosen_pokemon = None
@@ -100,16 +100,15 @@ class Starter(commands.Cog):
         
         async with ctx.typing():
             try:
-                # CRIA O POKÉMON NO BANCO 
-                # O poke_obj retornado aqui já terá o gênero sorteado pelo Model
                 poke_mongo_id, poke_obj = await self.bot.catch_controller.create_specific_pokemon(
                     owner_id=ctx.author.id,
                     species_id=chosen_pokemon['api_id'],
+                    catch_order=1,  
                     level=5
                 )
 
                 if not poke_mongo_id:
-                    return await ctx.send("Error: Pokémon not found in the bot’s database.")
+                    return await ctx.send("Error: Pokémon not found in the bot's database.")
 
                 base_poke = await self.bot.db.pokemons.find_one({"_id": chosen_pokemon['api_id']})
                 types = base_poke['types']

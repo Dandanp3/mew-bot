@@ -13,6 +13,7 @@ class PokemonController:
         self.client = MongoClient(os.getenv('MONGO_TOKEN'), tlsCAFile=ca)
         self.db = self.client['mew_bot']
         self.collection = self.db['pokemons']
+        self.caught_colletion = self.db['caught_pokemons']
 
     def get_evolution_data(self, pokemon_id):
         try:
