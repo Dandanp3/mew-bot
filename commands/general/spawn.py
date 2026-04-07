@@ -11,7 +11,8 @@ class PokemonSpawn(commands.Cog):
         self.server_controller = server_controller
         self.spawn_controller = spawn_controller
         self.spawns = {}
-        self.admin_id = 505806599034765323  
+        self.admin_id = 505806599034765323
+        self.active_spawns = {}  
         
         try:
             with open('legendaries.json', 'r') as f:
@@ -62,13 +63,14 @@ class PokemonSpawn(commands.Cog):
         embed.set_image(url="attachment://pokemon_spawn.gif")
         
         await channel.send(embed=embed, file=arquivo_discord)
+        
 
     async def increment_message(self, server_id):
         if server_id not in self.spawns:
             channel_id = await self.server_controller.get_chat_id(server_id)
             self.spawns[server_id] = {
                 "current": 0,
-                "target": 10, 
+                "target": 3, 
                 "channel_id": channel_id
             }
 
@@ -77,28 +79,60 @@ class PokemonSpawn(commands.Cog):
 
         if server_spawn["current"] >= server_spawn["target"]:
             server_spawn["current"] = 0
-            server_spawn["target"] = randint(20, 50) 
+            server_spawn["target"] = randint(1, 3) 
             
             # Sorteios
             is_legendary = randint(1, 1000) <= 2
-            is_shiny = randint(1, 500) == 1 
+            is_shiny = randint(1, 2) 
             
             if is_legendary:
                 pkm_name = random.choice(self.legendaries)
                 pokemon_data = self.get_pokemon_data(pkm_name)
+                self.active_spawns[server_id] = {
+                    "name": pkm_name,
+                    "shiny": is_shiny
+                }
             else:
                 while True:
                     data = self.get_pokemon_data(randint(1, 151))
                     if data and data['name'].lower() not in [n.lower() for n in self.legendaries]:
                         pokemon_data = data
+                        self.active_spawns[server_id] = {
+                            "name": data['name'],
+                            "shiny": is_shiny
+                        }
                         break
-            
+
             channel = self.bot.get_channel(server_spawn["channel_id"]) or \
                       await self.bot.fetch_channel(server_spawn["channel_id"])
             
             if channel:
                 await self.send_spawn_message(channel, pokemon_data, is_shiny, is_legendary)
-
+        
+    # Comando de captura
+    @commands.command(name="catch")
+    async def catch_command(self, ctx, *, pokemon_name: str):
+        pokemon_name = pokemon_name.strip().lower()
+        trainer = await self.bot.trainer_controller.get_trainer(ctx.author.id)
+        
+        if ctx.guild.id in self.active_spawns:
+            spawn_data = self.active_spawns[ctx.guild.id]
+            # compara o pokemon com o dicionario de pokemons spawnados em servidores
+            if pokemon_name == spawn_data["name"].lower():
+                # limpa o pokemon do dict do server atual
+                if spawn_data["shiny"]:
+                    await ctx.send(f"{ctx.author.mention} Congratulations! You cauptured a **SHINY** {pokemon_name}!")
+                else:
+                    await ctx.send(f"{ctx.author.mention} Congratulations! You cauptured a {pokemon_name}!")
+                del self.active_spawns[ctx.guild.id]
+                
+            else:
+                await ctx.send("Wrong pokemon.")
+                
+            
+        
+    
+    
     # comando admin pokespawn
     @commands.command(name="pokespawn")
     async def force_spawn(self, ctx, pokemon_name: str):
