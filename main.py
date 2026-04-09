@@ -45,14 +45,14 @@ class Mew(commands.Bot):
         for ext in extensions:
             try:
                 await self.load_extension(ext)
-                print(f"✅ Extensão carregada: {ext}")
+                print(f"Extensão carregada: {ext}")
             except Exception as e:
-                print(f"❌ Falha ao carregar {ext}")
+                print(f"Falha ao carregar {ext}")
                 import traceback
                 traceback.print_exc()
 
     async def on_ready(self):
-        print(f"Bot conectado como {self.user} ✅")
+        print(f"Bot conectado como {self.user}")
         print("Comandos disponíveis:")
         for cmd in self.walk_commands():
             print(f" - p!{cmd.name}")
@@ -73,7 +73,6 @@ class Mew(commands.Bot):
         if not trainer.get('selected_pokemon_id'):
             await ctx.send(f"⚠️ {ctx.author.mention}, você ainda não escolheu seu inicial! Use `p!pick <nome>`.")
             return False
-
         return True
 
 if __name__ == "__main__":

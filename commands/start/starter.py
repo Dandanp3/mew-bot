@@ -103,8 +103,8 @@ class Starter(commands.Cog):
                 poke_mongo_id, poke_obj = await self.bot.catch_controller.create_specific_pokemon(
                     owner_id=ctx.author.id,
                     species_id=chosen_pokemon['api_id'],
-                    catch_order=1,  
                     level=5
+                    # catch_order é calculado automaticamente agora!
                 )
 
                 if not poke_mongo_id:
