@@ -47,7 +47,7 @@ class PokemonController:
     async def seed_kanto(self):
         print("🚀 Iniciando importação de Kanto com Sprites e Moves (151 Pokémons)...")
         
-        for i in range(1, 152):
+        for i in range(152, 252):
             try:
                 if self.collection.find_one({"_id": i}):
                     print(f"ID {i} já existe, pulando...")

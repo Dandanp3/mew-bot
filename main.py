@@ -17,6 +17,7 @@ MONGO_URI = os.getenv('MONGO_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True 
+intents.guilds = True  
 
 class Mew(commands.Bot):
     def __init__(self):
@@ -36,26 +37,35 @@ class Mew(commands.Bot):
             'commands.start.starter',
             'commands.general.dex',
             'commands.general.info',
-            'server.controllers.emojiSetup',
             'commands.general.pokemons',
-            
-            'commands.general.spawn'
+            'commands.general.spawn',
+            'server.controllers.emojiSetup',
+            'commands.config.serverRegister',
         ] 
         
         for ext in extensions:
             try:
                 await self.load_extension(ext)
-                print(f"Extensão carregada: {ext}")
+                print(f"✅ Extensão carregada: {ext}")
             except Exception as e:
-                print(f"Falha ao carregar {ext}")
+                print(f"❌ Falha ao carregar {ext}")
                 import traceback
                 traceback.print_exc()
 
     async def on_ready(self):
-        print(f"Bot conectado como {self.user}")
+        print(f"\n🟢 Bot conectado como {self.user}")
+        print(f"📊 O bot está em {len(self.guilds)} servidor(es)")
         print("Comandos disponíveis:")
         for cmd in self.walk_commands():
             print(f" - p!{cmd.name}")
+        print()
+
+    async def on_guild_join(self, guild: discord.Guild):
+ 
+        print(f"Bot entrou no servidor: {guild.name} (ID: {guild.id})")
+        
+        # Registra o servidor automaticamente
+        await self.server_controller.server_register(guild.id)
 
     async def check_starter_chosen(self, ctx):
         # Lista de comandos liberados
