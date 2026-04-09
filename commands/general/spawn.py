@@ -67,7 +67,7 @@ class PokemonSpawn(commands.Cog):
             channel_id = await self.server_controller.get_chat_id(server_id)
             self.spawns[server_id] = {
                 "current": 0,
-                "target": 3, 
+                "target": 10, 
                 "channel_id": channel_id
             }
 
@@ -76,18 +76,18 @@ class PokemonSpawn(commands.Cog):
 
         if server_spawn["current"] >= server_spawn["target"]:
             server_spawn["current"] = 0
-            server_spawn["target"] = randint(1, 3) 
+            server_spawn["target"] = randint(15, 40) 
             
             # Sorteios
-            is_legendary = randint(1, 1000) <= 2
-            is_shiny = randint(1, 2) == 1  # eh true se cair 1
+            is_legendary = randint(1, 500) == 1 # 0.2%
+            is_shiny = randint(1, 2000) == 1  # 0.05%
             
             if is_legendary:
                 pkm_name = random.choice(self.legendaries)
                 pokemon_data = self.get_pokemon_data(pkm_name)
                 self.active_spawns[server_id] = {
                     "name": pkm_name,
-                    "shiny": is_shiny  # ✅ Agora é boolean (True/False)
+                    "shiny": is_shiny  
                 }
             else:
                 while True:
@@ -148,7 +148,7 @@ class PokemonSpawn(commands.Cog):
                     owner_id=ctx.author.id,
                     species_id=pokemon_id,
                     level=level_sorteado,
-                    is_shiny=spawn_data["shiny"]  # ✅ NOVO: Passa is_shiny
+                    is_shiny=spawn_data["shiny"]  
                 )
                 
                 #salva o treinador atualizado no banco
