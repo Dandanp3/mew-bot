@@ -37,15 +37,17 @@ class PokemonList(discord.ui.View):
             if isinstance(iv, str):
                 iv = float(iv)
             
-            emoji = self.emojis.get(species_id, "✨")   
+            # Busca o emoji 
+            emoji = self.emojis.get(species_id, "<:stars:1473914179705376778>")   
             gender = p.get('gender', 'Unknown')
-            if gender == 'Male': g_icon = " ♂️"
-            elif gender == 'Female': g_icon = " ♀️"
+            if gender == 'Male': g_icon = " <:male:1474064177768300638>"
+            elif gender == 'Female': g_icon = " <:female:1474064165768532058>"
             else: g_icon = ""
 
             shiny = "✨ " if p.get('is_shiny') else ""
             
             desc += f"`{catch_id}` {emoji} {shiny}**{name}**{g_icon} • Lvl. {level} • {iv:.2f}%\n"
+        
         embed = discord.Embed(
             title=f"🎒 {self.author.display_name}'s pokemons", 
             description=desc, 
@@ -61,7 +63,6 @@ class PokemonList(discord.ui.View):
         
         return embed
 
-    # Seta para voltar
     @discord.ui.button(label="◀", style=discord.ButtonStyle.primary, custom_id="prev_page")
     async def prev_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
@@ -75,7 +76,6 @@ class PokemonList(discord.ui.View):
     async def page_indicator(self, interaction: discord.Interaction, button: discord.ui.Button):
         pass 
 
-    # Seta para avançar 
     @discord.ui.button(label="▶", style=discord.ButtonStyle.primary, custom_id="next_page")
     async def next_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
@@ -89,19 +89,32 @@ class PokemonCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emojis = {}
+        self.load_emojis()
+
+    def load_emojis(self):
+        """Carrega e mescla os emojis de Kanto e Johto"""
         cache_dir = os.path.join(os.getcwd(), 'cache', 'cache_icons')
-        json_path = os.path.join(cache_dir, 'kanto.json')
+        arquivos = ['kanto.json', 'johto.json']
         
-        try:
-            if os.path.exists(json_path):
-                with open(json_path, 'r', encoding='utf-8') as f:
-                    self.emojis = json.load(f)
-                print(f"✅ Emojis carregados para o comando pokemon!")
-        except Exception as e:
-            print(f"⚠️ Erro ao carregar emojis: {e}")
+        total_carregado = 0
+        for arquivo in arquivos:
+            json_path = os.path.join(cache_dir, arquivo)
+            try:
+                if os.path.exists(json_path):
+                    with open(json_path, 'r', encoding='utf-8') as f:
+                        novos_emojis = json.load(f)
+                        self.emojis.update(novos_emojis) # Mescla com o dicionário principal
+                        total_carregado += len(novos_emojis)
+            except Exception as e:
+                print(f"⚠️ Erro ao carregar {arquivo}: {e}")
+        
+        print(f"✅ {total_carregado} emojis carregados para o comando pokemon!")
 
     @commands.command(name="pokemon", aliases=["p"])
     async def pokemon(self, ctx):
+        # Sempre recarrega para garantir que pegou os últimos criados pelo fix_emojis
+        self.load_emojis()
+
         pokemons = await self.bot.db.caught_pokemons.find(
             {"owner_id": ctx.author.id}
         ).sort("catch_order", 1).to_list(length=None)
@@ -112,9 +125,11 @@ class PokemonCommand(commands.Cog):
         view = PokemonList(ctx.author, pokemons, self.emojis)
         embed = view.generate_embed()
         
+        # Se tiver apenas uma página, não precisa mostrar botões
         if len(pokemons) <= 20:
-            view = None
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(embed=embed, view=view)
 
-        await ctx.send(embed=embed, view=view)
 async def setup(bot):
     await bot.add_cog(PokemonCommand(bot))

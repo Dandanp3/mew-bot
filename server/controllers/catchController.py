@@ -29,8 +29,10 @@ class CatchController:
             species_name=base_data['name'],
             catch_order=catch_order,
             level=level,
-            initial_moves=initial_moves,
-            is_shiny=is_shiny  
+            nickname=None,           
+            gender=None,             
+            initial_moves=initial_moves, 
+            is_shiny=is_shiny        
         )
 
         current_stats = new_pokemon.calculate_current_stats(base_data['stats'])

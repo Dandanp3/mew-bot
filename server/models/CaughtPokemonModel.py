@@ -26,27 +26,25 @@ class CaughtPokemonModel:
             self.gender = gender
         else:
             self.gender = random.choice(["Male", "Female"])
-        
-        # Lvl aleatório de 1-40
+            
         self.level = level if level is not None else random.randint(1, 40)
         self.total_xp = self._calculate_xp_for_level(self.level)
-        
-        # Lista de moves 
         self.moves = initial_moves if initial_moves else []
-        
         self.is_shiny = is_shiny
-        
-        # Sorteando nature e IVs 
         self.nature = random.choice(list(NATURES_DATA.keys()))
         
-        self.ivs = {stat: random.randint(0, 31) for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
+        self.ivs = {}
+        for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]:
+             # triangular(min, max, moda) moda = 15 puxa os valores pra baixo
+             iv_val = int(random.triangular(0, 31, 15))
+             
+             if iv_val > 31: 
+                 iv_val = 31 
+                 
+             self.ivs[stat] = iv_val
         
-        # Cálculo de ivs % 
         self.iv_percentage = round((sum(self.ivs.values()) / 186) * 100, 2)
-        
-        # EVs começam em 0
         self.evs = {stat: 0 for stat in ["hp", "attack", "defense", "sp_atk", "sp_def", "speed"]}
-        
         self.caught_at = datetime.utcnow()
 
     def _calculate_xp_for_level(self, level: int) -> int:

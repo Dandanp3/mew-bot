@@ -8,6 +8,15 @@
         { "name": "Charmander", "api_id": 4, "emoji": "<:pkmn_4:1474601536859668540>" },
         { "name": "Squirtle", "api_id": 7, "emoji": "<:pkmn_7:1474601599744737460>" }
       ]
+    },
+    {
+      "gen": "II",
+      "region": "Johto",
+      "pokes": [
+        { "name": "Chikorita", "api_id": 152, "emoji": "<:pkmn_152:1491870104508432486>" },
+        { "name": "Cyndaquil", "api_id": 155, "emoji": "<:pkmn_155:1491870157944127615>" },
+        { "name": "Totodile", "api_id": 158, "emoji": "<:pkmn_158:1491870214160122037>" }
+      ]
     }
   ]
 }

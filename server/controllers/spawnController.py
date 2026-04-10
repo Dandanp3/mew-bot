@@ -11,14 +11,19 @@ class SpawnController:
         
         # Caminho do arquivo JSON com as coordenadas
         self.coords_file = os.path.join(self.project_root, 'server', 'config', 'coords.json')
-        self.pokemon_coords = self._load_coords()
+        self.pokemon_coords = {}  
     
     def _load_coords(self):
+
         try:
             with open(self.coords_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {}
+                loaded = json.load(f)
+                if loaded:
+                    self.pokemon_coords = loaded
+                    return loaded
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"❌ Erro ao carregar coords.json: {e}")
+        return {}
     
     def get_region_folder(self, pokemon_id):
         if 1 <= pokemon_id <= 151: return "Kanto"
@@ -29,6 +34,8 @@ class SpawnController:
         return "Geral"
 
     def get_pokemon_config(self, pokemon_name):
+        self._load_coords()
+        
         pokemon_name_lower = pokemon_name.lower()
         config = self.pokemon_coords.get(pokemon_name_lower, {
             "x": 200, "y": 110, "bg": "normal.jpeg"
@@ -75,7 +82,7 @@ class SpawnController:
         return caminho_salvamento
         
     def get_image_data(self, pokemon_data, is_shiny):
-        # Pegar ID e Nome do banco (
+        # Pegar ID e Nome do banco
         pokemon_id = pokemon_data['_id']
         pokemon_name = pokemon_data['name'].lower()
         nome_do_arquivo = f"{'Shiny_' if is_shiny else ''}{pokemon_name}.gif"
@@ -115,6 +122,7 @@ class SpawnController:
         altura_alvo = int((float(bg_raw.size[1]) * proporcao))
         bg_image = bg_raw.resize((largura_alvo, altura_alvo), Image.LANCZOS)
         
+        # ✅ MELHORADO: Agora recarrega coords.json sempre
         pokemon_config = self.get_pokemon_config(pokemon_name)
         coords = (pokemon_config["x"], pokemon_config["y"])
         duracoes = self.get_frame_durations(pkm_gif)
