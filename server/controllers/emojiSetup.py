@@ -12,7 +12,7 @@ class EmojiSetup(commands.Cog):
         self.bot = bot
         self.owner_id = 505806599034765323
         
-        # LISTA DE 6 SERVIDORES 
+        # 8 servidores: Hoenn
         self.guild_ids = [
             810562440811118623, 
             1374151327294292129, 
@@ -20,19 +20,19 @@ class EmojiSetup(commands.Cog):
             1491865979607842946,
             1491866234831114413, 
             1435662851959165040,
-            1197386408910921750  
+            1197386408910921750,
+            1492273263991066804,
+            1456753477844996199,
+            1213214506646241281
         ]
 
         self.cache_dir = os.path.join(os.getcwd(), 'cache', 'cache_icons')
         os.makedirs(self.cache_dir, exist_ok=True)
-        self.json_path = os.path.join(self.cache_dir, 'pokedex_emojis.json')
 
     def upscale_image(self, img_bytes):
         # Amplia a imagem para 128x128
         img = Image.open(BytesIO(img_bytes))
-        # Remove áreas vazias desnecessárias se houver
         img = img.convert("RGBA")
-        # Redimensiona 
         img_big = img.resize((128, 128), Image.NEAREST)
         
         output = BytesIO()
@@ -44,18 +44,24 @@ class EmojiSetup(commands.Cog):
         if ctx.author.id != self.owner_id:
             return await ctx.send("❌ Negado.")
 
-        await ctx.send("🔍 Iniciando mapeamento e upload ampliado (Kanto & Johto)...")
+        await ctx.send("🚀 Iniciando upload das regiões: Kanto, Johto, Hoenn, Sinnoh e Unova!")
 
         async with aiohttp.ClientSession() as session:
             current_guild_idx = 0
 
-            # Loop de 1 até 251 
-            for poke_id in range(1, 252):
+            for poke_id in range(1, 650):
                 
+                # Definição das Regiões
                 if poke_id <= 151:
                     filename = 'kanto.json'
-                else:
+                elif poke_id <= 251:
                     filename = 'johto.json'
+                elif poke_id <= 386:
+                    filename = 'hoenn.json'
+                elif poke_id <= 493:
+                    filename = 'sinnoh.json'
+                elif poke_id <= 649:
+                    filename = 'unova.json'
                 
                 path_atual = os.path.join(self.cache_dir, filename)
                 
@@ -86,7 +92,7 @@ class EmojiSetup(commands.Cog):
                         current_guild_idx += 1
                 
                 if not target_guild:
-                    await ctx.send(f"❌ Espaço esgotado! Parei no ID {poke_id}. Crie mais servidores.")
+                    await ctx.send(f"❌ Espaço esgotado! Parei no ID {poke_id}. Adicione mais servidores na lista `guild_ids`.")
                     break
 
                 img_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons/{poke_id}.png"

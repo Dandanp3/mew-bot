@@ -122,7 +122,6 @@ class SpawnController:
         altura_alvo = int((float(bg_raw.size[1]) * proporcao))
         bg_image = bg_raw.resize((largura_alvo, altura_alvo), Image.LANCZOS)
         
-        # ✅ MELHORADO: Agora recarrega coords.json sempre
         pokemon_config = self.get_pokemon_config(pokemon_name)
         coords = (pokemon_config["x"], pokemon_config["y"])
         duracoes = self.get_frame_durations(pkm_gif)

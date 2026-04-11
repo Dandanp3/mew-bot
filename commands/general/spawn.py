@@ -144,24 +144,35 @@ class PokemonSpawn(commands.Cog):
             pass
 
     @commands.command(name="pokespawn")
-    async def force_spawn(self, ctx, pokemon_name: str):
+    async def force_spawn(self, ctx, pokemon_name: str, status: str = ""):
         if ctx.author.id != self.admin_id:
             return 
 
-        pokemon_data = await self.get_pokemon_data(pokemon_name)
-        
-        if not pokemon_data:
-            return await ctx.send(f"❌ Pokémon `{pokemon_name}` não encontrado no Banco de Dados.")
+        # Ativa o "Digitando..." para evitar o erro 503/Timeout
+        async with ctx.typing():
+            pokemon_data = await self.get_pokemon_data(pokemon_name)
+            
+            if not pokemon_data:
+                return await ctx.send(f"❌ Pokémon `{pokemon_name}` não encontrado no Banco de Dados.")
 
-        is_legendary = pokemon_data['name'].lower() in [n.lower() for n in self.legendaries]
-        
-        # Registra no spawn ativo para poder ser capturado
-        self.active_spawns[ctx.guild.id] = {
-            "name": pokemon_data['name'],
-            "shiny": False
-        }
+            # Verifica se você digitou "shiny" após o nome do pokemon
+            is_shiny = status.lower() == "shiny"
+            
+            is_legendary = pokemon_data['name'].lower() in [n.lower() for n in self.legendaries]
+            
+            # Registra no spawn ativo para poder ser capturado corretamente
+            self.active_spawns[ctx.guild.id] = {
+                "name": pokemon_data['name'],
+                "shiny": is_shiny
+            }
 
-        await self.send_spawn_message(ctx.channel, pokemon_data, is_shiny=False, is_legendary=is_legendary)
+            # Envia a mensagem (o processamento do GIF acontece aqui dentro)
+            await self.send_spawn_message(
+                ctx.channel, 
+                pokemon_data, 
+                is_shiny=is_shiny, 
+                is_legendary=is_legendary
+            )
 
     @commands.Cog.listener()
     async def on_message(self, message):
