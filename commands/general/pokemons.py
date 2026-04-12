@@ -39,14 +39,11 @@ class PokemonList(discord.ui.View):
             
             # Busca o emoji 
             emoji = self.emojis.get(species_id, "<:stars:1473914179705376778>")   
-            gender = p.get('gender', 'Unknown')
-            if gender == 'Male': g_icon = " <:male:1474064177768300638>"
-            elif gender == 'Female': g_icon = " <:female:1474064165768532058>"
-            else: g_icon = ""
-
+            
             shiny = "✨ " if p.get('is_shiny') else ""
             
-            desc += f"`{catch_id}` {emoji} {shiny}**{name}**{g_icon} • Lvl. {level} • {iv:.2f}%\n"
+            # String limpa, sem o gênero
+            desc += f"`{catch_id}` {emoji} {shiny}**{name}** • Lvl. {level} • {iv:.2f}%\n"
         
         embed = discord.Embed(
             title=f"🎒 {self.author.display_name}'s pokemons", 
@@ -94,7 +91,7 @@ class PokemonCommand(commands.Cog):
     def load_emojis(self):
         """Carrega e mescla os emojis de Kanto e Johto"""
         cache_dir = os.path.join(os.getcwd(), 'cache', 'cache_icons')
-        arquivos = ['kanto.json', 'johto.json']
+        arquivos = ['kanto.json', 'johto.json', 'hoenn.json']
         
         total_carregado = 0
         for arquivo in arquivos:
@@ -115,12 +112,21 @@ class PokemonCommand(commands.Cog):
         # Sempre recarrega para garantir que pegou os últimos criados pelo fix_emojis
         self.load_emojis()
 
-        pokemons = await self.bot.db.caught_pokemons.find(
+        # Puxa os dados sem ordenar pelo banco
+        pokemons_raw = await self.bot.db.caught_pokemons.find(
             {"owner_id": ctx.author.id}
-        ).sort("catch_order", 1).to_list(length=None)
+        ).to_list(length=None)
 
-        if not pokemons:
+        if not pokemons_raw:
             return await ctx.send("❌ Você ainda não tem nenhum Pokémon!")
+
+        # Função auxiliar para garantir que a ordenação seja sempre matemática
+        def extract_iv(p):
+            iv = p.get('iv_percentage', 0.0)
+            return float(iv) if isinstance(iv, str) else iv
+
+        # Ordena a lista em Python usando o IV (do maior para o menor)
+        pokemons = sorted(pokemons_raw, key=extract_iv, reverse=True)
 
         view = PokemonList(ctx.author, pokemons, self.emojis)
         embed = view.generate_embed()
