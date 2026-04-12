@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
+from io import BytesIO
 
 TYPE_COLORS = {
     "Normal": 0xA8A77A, "Fire": 0xEE8130, "Water": 0x6390F0,
@@ -12,11 +13,12 @@ TYPE_COLORS = {
 }
 
 class InfoView(View):
-    def __init__(self, pokemon_data, base_stats, author, is_detailed=False):
+    def __init__(self, pokemon_data, base_stats, author, image_url, is_detailed=False):
         super().__init__(timeout=60)
         self.pokemon_data = pokemon_data
         self.base_stats = base_stats
         self.author = author 
+        self.image_url = image_url
         self.is_detailed = is_detailed
 
         label = "Back" if is_detailed else "EVs/Moves"
@@ -29,14 +31,17 @@ class InfoView(View):
     async def toggle_callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
             return await interaction.response.send_message("This menu isn't yours!", ephemeral=True)
+        
         self.is_detailed = not self.is_detailed
         
         new_embed = create_info_embed(self.pokemon_data, self.base_stats, self.is_detailed)
-        
         new_embed.set_thumbnail(url=self.author.display_avatar.url)
-        new_embed.set_image(url="attachment://pokemon.gif")
         
-        new_view = InfoView(self.pokemon_data, self.base_stats, self.author, self.is_detailed)
+        # Usa a URL salva em vez de tentar ler um attachment perdido
+        if self.image_url:
+            new_embed.set_image(url=self.image_url)
+        
+        new_view = InfoView(self.pokemon_data, self.base_stats, self.author, self.image_url, self.is_detailed)
         
         await interaction.response.edit_message(embed=new_embed, view=new_view)
 
@@ -127,33 +132,60 @@ class Info(commands.Cog):
             return await ctx.send("<:letterx:1473913370171408465> Pokémon não encontrado.")
 
         base_stats = await self.bot.db.pokemons.find_one({"_id": pokemon_data['species_id']})
-        
-        # Mapeando os dados para a função do spawn_controller
-        # O SpawnController espera um dict com '_id' e 'name'
-        mock_data_for_spawn = {
-            '_id': pokemon_data['species_id'],
-            'name': pokemon_data['species_name']
-        }
-        
         is_shiny = pokemon_data.get('is_shiny', False)
         
+        pokemon_id = pokemon_data['species_id']
+        pokemon_name = pokemon_data['species_name']
+        region = self.bot.spawn_controller.get_region_folder(pokemon_id)
+
+        cache_name = f"info_{pokemon_name}"
+        
+        cached_url = self.bot.spawn_controller.get_cached_url(region, cache_name, is_shiny)
+
+        embed = create_info_embed(pokemon_data, base_stats)
+        embed.set_thumbnail(url=ctx.author.display_avatar.url)
+
         try:
-            # Reutilizando a função incrível do seu SpawnController!
-            local_path = self.bot.spawn_controller.get_image_data(mock_data_for_spawn, is_shiny)
+            if cached_url:
+                embed.set_image(url=cached_url)
+                view = InfoView(pokemon_data, base_stats, ctx.author, cached_url)
+                return await ctx.send(embed=embed, view=view)
+
+            mock_data = {'_id': pokemon_id, 'name': pokemon_name}
+            frames_pkm, duracoes = self.bot.spawn_controller.get_image_data_memory(mock_data, is_shiny)
             
-            if local_path:
-                file = discord.File(local_path, filename="pokemon.gif")
-                embed = create_info_embed(pokemon_data, base_stats)
+            if frames_pkm:
+                # Monta o GIF do sprite redimensionado na memória
+                output = BytesIO()
+                frames_pkm[0].save(
+                    output, format="GIF", save_all=True, append_images=frames_pkm[1:],
+                    duration=duracoes, loop=0, disposal=2, optimize=True
+                )
+                output.seek(0)
                 
-                embed.set_thumbnail(url=ctx.author.display_avatar.url) 
-                embed.set_image(url="attachment://pokemon.gif")       
-                
-                view = InfoView(pokemon_data, base_stats, ctx.author) 
-                await ctx.send(file=file, embed=embed, view=view)
+                nome_arquivo = f"{cache_name}_{'shiny' if is_shiny else 'normal'}.gif"
+                arquivo_discord = discord.File(fp=output, filename=nome_arquivo)
+
+                cache_channel_id = getattr(self.bot, 'cache_channels', {}).get(region)
+                cache_channel = self.bot.get_channel(cache_channel_id) if cache_channel_id else None
+
+                if cache_channel:
+                    msg = await cache_channel.send(file=arquivo_discord)
+                    nova_url = msg.attachments[0].url
+                    self.bot.spawn_controller.save_cached_url(region, cache_name, is_shiny, nova_url)
+                    
+                    embed.set_image(url=nova_url)
+                    view = InfoView(pokemon_data, base_stats, ctx.author, nova_url)
+                    await ctx.send(embed=embed, view=view)
+                else:
+                    # Fallback de emergência: se não achar o canal de cache, envia no próprio chat
+                    embed.set_image(url=f"attachment://{nome_arquivo}")
+                    output.seek(0)
+                    view = InfoView(pokemon_data, base_stats, ctx.author, None) 
+                    await ctx.send(file=arquivo_discord, embed=embed, view=view)
             else:
-                embed = create_info_embed(pokemon_data, base_stats)
-                embed.set_thumbnail(url=ctx.author.display_avatar.url) 
-                await ctx.send("Não foi possível carregar a imagem.", embed=embed, view=InfoView(pokemon_data, base_stats, ctx.author))
+                # Se a PokeAPI falhou
+                await ctx.send("Não foi possível carregar a imagem da API.", embed=embed, view=InfoView(pokemon_data, base_stats, ctx.author, None))
 
         except Exception as e:
             print(f"Erro ao processar comando info: {e}")

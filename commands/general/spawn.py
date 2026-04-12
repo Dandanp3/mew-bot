@@ -19,6 +19,14 @@ class PokemonSpawn(commands.Cog):
         self.admin_id = 505806599034765323
         self.active_spawns = {}  
         
+        self.cache_channels = {
+            "Kanto": 1492555040550948904, 
+            "Johto": 1492555060679544943, 
+            "Hoenn": 1492555081965371495, 
+            "Sinnoh": 1492555101213167798, 
+            "Unova": 1492555120813146192  
+        }
+        
         try:
             if os.path.exists('legendaries.json'):
                 with open('legendaries.json', 'r') as f:
@@ -31,35 +39,77 @@ class PokemonSpawn(commands.Cog):
 
     async def get_pokemon_data(self, name_or_id):
         query = {}
-        if isinstance(name_or_id, int) or name_or_id.isdigit():
+        if isinstance(name_or_id, int) or str(name_or_id).isdigit():
             query = {"_id": int(name_or_id)}
         else:
-            # Busca ignorando maiúsculas/minúsculas
             query = {"name": name_or_id.capitalize()}
             
         return await self.pokemon_collection.find_one(query)
 
     async def send_spawn_message(self, channel, pokemon_data, is_shiny=False, is_legendary=False):
-        name = pokemon_data['name'].capitalize()
-        pokemon_config = self.spawn_controller.get_pokemon_config(pokemon_data['name'])
+        pokemon_name = pokemon_data['name']
+        pokemon_id = pokemon_data['_id']
+        region = self.spawn_controller.get_region_folder(pokemon_id)
+        
+        cached_url = self.spawn_controller.get_cached_url(region, pokemon_name, is_shiny)
+        
+        embed = discord.Embed(title="Wild pokemon", color=discord.Color.random())
+        
+        if cached_url:
+            embed.set_image(url=cached_url)
+            await channel.send(embed=embed)
+            return
+
+        pokemon_config = self.spawn_controller.get_pokemon_config(pokemon_name)
         caminho_bg = self.spawn_controller.get_background_path(pokemon_config['bg'])
         
         if not caminho_bg:
-            print(f"⚠️ Background '{pokemon_config['bg']}' não encontrado para {name}")
+            print(f"⚠️ Background '{pokemon_config['bg']}' não encontrado para {pokemon_name}")
             return
         
-        caminho_pokemon = self.spawn_controller.get_image_data(pokemon_data, is_shiny)
-        gif_final_bytes = self.spawn_controller.create_final_spawn_gif(
-            caminho_pokemon, 
-            caminho_bg, 
-            pokemon_data['name']
-        )
-            
-        arquivo_discord = discord.File(fp=gif_final_bytes, filename="pokemon_spawn.gif")
-        embed = discord.Embed(title="Wild pokemon", color=discord.Color.random())
-        embed.set_image(url="attachment://pokemon_spawn.gif")
+        frames_pkm, duracoes = self.spawn_controller.get_image_data_memory(pokemon_data, is_shiny)
         
-        await channel.send(embed=embed, file=arquivo_discord)
+        if not frames_pkm:
+            print(f"❌ Falha ao obter frames para {pokemon_name}")
+            return
+
+        # Processa Fundo + Pokemon 
+        gif_final_bytes = self.spawn_controller.create_final_spawn_gif(
+            frames_pkm,    
+            duracoes,     
+            caminho_bg,    
+            pokemon_name   
+        )
+        
+        if not gif_final_bytes:
+            return
+
+        nome_arquivo = f"{pokemon_name}_{'shiny' if is_shiny else 'normal'}.gif"
+        
+        # 3. Pega o chat de upload da região correspondente
+        cache_channel_id = self.cache_channels.get(region)
+        cache_channel = self.bot.get_channel(cache_channel_id)
+        
+        if cache_channel:
+            # Envia o arquivo pesado pro chat escondido
+            gif_final_bytes.seek(0)
+            arquivo_discord = discord.File(fp=gif_final_bytes, filename=nome_arquivo)
+            cache_msg = await cache_channel.send(file=arquivo_discord)
+            
+            # Pega o link definitivo do CDN do Discord
+            nova_url = cache_msg.attachments[0].url
+            
+            # Salva esse link no JSON pra próxima vez
+            self.spawn_controller.save_cached_url(region, pokemon_name, is_shiny, nova_url)
+            embed.set_image(url=nova_url)
+            await channel.send(embed=embed)
+        else:
+            # Fallback de segurança: se o chat de cache falhar, ele envia normal anexado
+            print(f"⚠️ Chat de cache da região {region} não configurado ou bot sem acesso.")
+            gif_final_bytes.seek(0)
+            arquivo_fallback = discord.File(fp=gif_final_bytes, filename=nome_arquivo)
+            embed.set_image(url=f"attachment://{nome_arquivo}")
+            await channel.send(embed=embed, file=arquivo_fallback)
 
     async def increment_message(self, server_id):
         if server_id not in self.spawns:
@@ -81,7 +131,7 @@ class PokemonSpawn(commands.Cog):
                 pokemon_data = await self.get_pokemon_data(pkm_name)
             else:
                 while True:
-                    random_id = randint(1, 251)
+                    random_id = randint(1, 386)
                     pokemon_data = await self.get_pokemon_data(random_id)
                     if pokemon_data and pokemon_data['name'].lower() not in [n.lower() for n in self.legendaries]:
                         break
@@ -110,17 +160,14 @@ class PokemonSpawn(commands.Cog):
         trainer = TrainerModel.from_dict(trainer_data)
         
         if ctx.guild.id in self.active_spawns:
-            # Verifica se o nome está certo ANTES de mexer no dicionário
             if pokemon_name == self.active_spawns[ctx.guild.id]["name"].lower():
                 spawn_data = self.active_spawns.pop(ctx.guild.id)
                 
-                # Agora sim fazemos as consultas demoradas (awaits)
                 pokemon_base = await self.get_pokemon_data(pokemon_name)
                 if not pokemon_base: 
                     return
                 
                 pokemon_id = pokemon_base["_id"]
-                # Definição de região baseada no ID
                 region = "Kanto" if pokemon_id <= 151 else "Johto"
                 
                 trainer.register_catch(pokemon_id, region, pokemon_base["types"])
@@ -148,25 +195,20 @@ class PokemonSpawn(commands.Cog):
         if ctx.author.id != self.admin_id:
             return 
 
-        # Ativa o "Digitando..." para evitar o erro 503/Timeout
         async with ctx.typing():
             pokemon_data = await self.get_pokemon_data(pokemon_name)
             
             if not pokemon_data:
                 return await ctx.send(f"❌ Pokémon `{pokemon_name}` não encontrado no Banco de Dados.")
 
-            # Verifica se você digitou "shiny" após o nome do pokemon
             is_shiny = status.lower() == "shiny"
-            
             is_legendary = pokemon_data['name'].lower() in [n.lower() for n in self.legendaries]
             
-            # Registra no spawn ativo para poder ser capturado corretamente
             self.active_spawns[ctx.guild.id] = {
                 "name": pokemon_data['name'],
                 "shiny": is_shiny
             }
 
-            # Envia a mensagem (o processamento do GIF acontece aqui dentro)
             await self.send_spawn_message(
                 ctx.channel, 
                 pokemon_data, 
